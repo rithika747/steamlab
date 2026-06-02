@@ -85,17 +85,22 @@ try:
     state1 = IAPWS97(P=P_condenser, x=0)
     h1, s1 = state1.h, state1.s
     
-    # State 3: Boiler Outlet / Turbine Inlet (Superheated Steam at P_boiler, T_boiler)
+    # State 3: Boiler Outlet / Turbine Inlet (Superheated or Supercritical at P_boiler, T_boiler)
     state3 = IAPWS97(P=P_boiler, T=T_boiler)
     h3, s3 = state3.h, state3.s
     
     # State 4: Turbine Outlet / Condenser Inlet (Isentropic Expansion: s4 = s3 at P_condenser)
     state4 = IAPWS97(P=P_condenser, s=s3)
     h4, s4 = state4.h, state4.s
-    quality = state4.x
+    
+    # Gracefully extract quality (quality is an attribute, but might throw a ValueError if superheated)
+    try:
+        quality = state4.x
+    except:
+        quality = 1.0  # If it expands completely into superheated gas, quality is effectively 100%
     
     # State 2: Pump Outlet / Boiler Inlet (Compressed Liquid)
-    # Re-calculating using standard open-system pump work formula: w_pump = v1 * (P_boiler - P_condenser)
+    #  w_pump = v1 * (P_boiler - P_condenser)
     w_pump = state1.v * (P_boiler - P_condenser) * 1000
     h2 = h1 + w_pump
     state2_actual = IAPWS97(P=P_boiler, h=h2)
@@ -110,7 +115,9 @@ try:
     
     if Q_in > 0 and W_net > 0:
         valid = True
-except:
+except Exception as e:
+    # Diagnostic print to see errors in the console terminal
+    print(f"Calculation engine encountered: {e}")
     valid = False
 
 if valid:
@@ -119,12 +126,30 @@ if valid:
     col1.metric("Thermal Efficiency", f"{efficiency:.2f}%")
     col2.metric("Carnot Limit", f"{carnot:.2f}%")
     col3.metric("Net Work", f"{W_net:.2f} kJ/kg")
-    col4.metric("Turbine Outlet Quality", f"{quality:.3f}")
-
-    if quality is not None and quality < 0.85:
-        st.error(f"⚠️ Turbine outlet quality = {quality:.3f} — blade damage risk!")
+    
+    # Format the quality string dynamically based on phase behavior
+    if quality is not None:
+        col4.metric("Turbine Outlet Quality", f"{quality:.3f}")
+        if quality < 0.85:
+            st.error(f"⚠️ Turbine outlet quality = {quality:.3f} — blade damage risk!")
+        else:
+            st.success(f"✅ Turbine outlet quality = {quality:.3f} — safe")
     else:
-        st.success(f"✅ Turbine outlet quality = {quality:.3f} — safe")
+        col4.metric("Turbine Outlet Quality", "Superheated")
+        st.success("✅ Turbine outlet expands into pure superheated gas — completely safe")
+
+#Safeguard against supercritical pressures crashing the saturation function further down
+if P_boiler < 22.064:
+    state_sat_liq = IAPWS97(P=P_boiler, x=0)
+    state_sat_vap = IAPWS97(P=P_boiler, x=1)
+    T_boil = state_sat_liq.T
+    s_sat_liq = state_sat_liq.s
+    s_sat_vap = state_sat_vap.s
+else:
+    # Bypassing saturation curve plotting loops for extremes
+    T_boil = None
+    s_sat_liq = None
+    s_sat_vap = None
 
     # Saturation Dome
     def get_saturation_dome():
