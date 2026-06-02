@@ -20,7 +20,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🔥 SteamLab")
-st.markdown("<h4 style='color: #FF6B35;'>Interactive Rankine cycle analyser — T-s diagrams & CO₂ estimation</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='color: #FF6B35;'>Interactive Rankine cycle analyser — T-s diagrams, Parametric Studies & CO₂ estimation</h4>", unsafe_allow_html=True)
 
 # 2. Sidebar Core Inputs (Native Session State Synchronization)
 st.sidebar.header("Cycle Parameters")
