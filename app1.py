@@ -67,7 +67,7 @@ st.markdown("<h4 style='color: #FF6B35;'>Interactive Rankine cycle analyser — 
 
 # Sidebar Inputs 
 st.sidebar.header("Cycle Parameters")
-P_boiler = st.sidebar.slider("Boiler Pressure (MPa)", 1.0, 20.0, 10.0, 0.1)
+P_boiler = st.sidebar.slider("Boiler Pressure (MPa)", 1.0, 30.0, 10.0, 0.1)
 T_boiler_c = st.sidebar.slider("Boiler Temperature (°C)", 300.0, 600.0, 500.0, 1.0)
 P_condenser = st.sidebar.slider("Condenser Pressure (MPa)", 0.01, 0.5, 0.1, 0.01)
 
